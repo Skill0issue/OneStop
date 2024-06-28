@@ -10,6 +10,8 @@ const Canvas: React.FC = () => {
   const [toolType, setToolType] = useState<string>("rectangle");
   const [elementType, setElementType] = useState<string>("normal");
   const [action, setAction] = useState<string>("none");
+  const [dotted, setDotted] = useState(false);
+  const [dotSize,setDotSize]= useState(5);
 
   const [elements, setElements] = useState<element[]>([]);
   const [selectedElement, setSelectedElement] = useState<element | null>(null);
@@ -26,6 +28,7 @@ const Canvas: React.FC = () => {
     y1: number;
     x2: number;
     y2: number;
+    dotsize: number;
   };
 
   const distance = (
@@ -37,7 +40,7 @@ const Canvas: React.FC = () => {
 
   const handleMouseDown = (event: React.MouseEvent<HTMLCanvasElement>) => {
     const { clientX, clientY } = event;
-      if (toolType === "select") {
+    if (toolType === "select") {
       const currentElement: element | undefined = elements.find((el) => {
         const { toolType } = el;
         if (toolType === "line") {
@@ -70,7 +73,8 @@ const Canvas: React.FC = () => {
           offsetY: clientY - currentElement.y1,
         });
       }
-    } else { // @TODO : need to change this when adding resize and other options :(
+    } else {
+      // @TODO : need to change this when adding resize and other options :(
       setElements((prev) => [
         ...prev,
         {
@@ -81,6 +85,7 @@ const Canvas: React.FC = () => {
           x2: clientX,
           y2: clientY,
           id: elements.length,
+          dotsize: dotted? dotSize : 0,
         },
       ]);
       setAction("drawing");
@@ -89,8 +94,8 @@ const Canvas: React.FC = () => {
 
   const handleMouseMove = (event: React.MouseEvent<HTMLCanvasElement>) => {
     const { clientX, clientY } = event;
-      if (action === "moving" && selectedElement) {
-          (event.target as HTMLCanvasElement).style.cursor = "move";
+    if (action === "moving" && selectedElement) {
+      (event.target as HTMLCanvasElement).style.cursor = "move";
       const { offsetX, offsetY } = selectedElementOffset;
       const width = selectedElement.x2 - selectedElement.x1;
       const height = selectedElement.y2 - selectedElement.y1;
@@ -142,8 +147,8 @@ const Canvas: React.FC = () => {
   ) => {
     if (context) {
       context.clearRect(0, 0, context.canvas.width, context.canvas.height);
-
       elements.forEach((elem) => {
+        context.setLineDash([elem.dotsize]);
         switch (elem.toolType) {
           case "line":
             if (elem.elementType === "normal") {
@@ -201,42 +206,62 @@ const Canvas: React.FC = () => {
 
   return (
     <>
-      <div className="fixed w-screen h-12 flex justify-center items-center">
-        <select
-          name="ElementType"
-          defaultValue={elementType}
-          id="elementType"
-          onChange={(event) => {
-            setElementType(event.target.value);
+      <div className="fixed w-screen h-12 flex gap-4 text-center  justify-center items-center">
+        <div>
+          <select
+            name="ElementType"
+            defaultValue={elementType}
+            id="elementType"
+            onChange={(event) => {
+              setElementType(event.target.value);
+            }}
+          >
+            <option value="normal">Normal</option>
+            <option value="rough">Rough</option>
+          </select>
+        </div>
+        <div>
+          <input
+            type="radio"
+            name="toolType"
+            id="line"
+            checked={toolType === "line"}
+            onChange={() => setToolType("line")}
+          />
+          <label htmlFor="line">Line</label>
+        </div>
+        <div>
+          <input
+            type="radio"
+            name="toolType"
+            id="select"
+            checked={toolType === "select"}
+            onChange={() => setToolType("select")}
+          />
+          <label htmlFor="select">Select</label>
+        </div>
+        <div>
+          <input
+            type="radio"
+            name="toolType"
+            id="rectangle"
+            checked={toolType === "rectangle"}
+            onChange={() => setToolType("rectangle")}
+          />
+          <label htmlFor="rectangle">Rectangle</label>
+        </div>
+        <div
+          onChange={() => {
+            setDotted(!dotted);
           }}
         >
-          <option value="normal">Normal</option>
-          <option value="rough">Rough</option>
-        </select>
-        <input
-          type="radio"
-          name="toolType"
-          id="line"
-          checked={toolType === "line"}
-          onChange={() => setToolType("line")}
-        />
-        <label htmlFor="line">Line</label>
-        <input
-          type="radio"
-          name="toolType"
-          id="select"
-          checked={toolType === "select"}
-          onChange={() => setToolType("select")}
-        />
-        <label htmlFor="select">Select</label>
-        <input
-          type="radio"
-          name="toolType"
-          id="rectangle"
-          checked={toolType === "rectangle"}
-          onChange={() => setToolType("rectangle")}
-        />
-        <label htmlFor="rectangle">Rectangle</label>
+          <input type="checkbox" name="doted" id="doted" checked={dotted} />
+          <label htmlFor="dotted">dotted</label>
+        </div>
+        <div>
+          <input type="range" name="dotsize" id="dotsize" min={5} max={20} defaultValue={dotSize} onChange={(event)=> setDotSize(event.target.value) }/>
+          <label htmlFor="dotsize">dotsize</label>
+        </div>
       </div>
       <canvas
         ref={canvasRef}
