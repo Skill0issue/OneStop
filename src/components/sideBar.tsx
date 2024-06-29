@@ -89,18 +89,18 @@ const Dashboard: React.FC = () => {
 
   const handleMouseEnter = () => {
     clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => setIsMinimized(false), 200);
+    debounceTimer = setTimeout(() => setIsMinimized(false), 100);
   };
 
   const handleMouseLeave = () => {
     clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => setIsMinimized(true), 200);
+    debounceTimer = setTimeout(() => setIsMinimized(true), 100);
   };
 
   return (
     <div
       id="sidebar"
-      className={`flex flex-col h-[85%] p-3 rounded-xl z-2 absolute left-[24px] items-center shadow-xl top-[70px] noselect ${
+      className={`flex flex-col h-[85%] p-3 rounded-xl z-50 absolute left-[24px] items-center shadow-xl top-[70px] noselect ${
         isMinimized ? "w-20" : "w-72"
       } ${
         theme
