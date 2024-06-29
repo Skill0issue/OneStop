@@ -1,0 +1,8 @@
+[build]
+  command = "vite build"  # Command to build your project, adjust as per your setup
+  publish = "dist"        # Directory where Vite outputs the built files
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
