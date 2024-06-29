@@ -1,9 +1,9 @@
 import ReactDOM from 'react-dom/client'
-import App from './App.tsx'
+import App from './App'
 import './index.css'
 
 //context
-import { CanvasProvider } from './context/canvasContext.tsx'
+import { CanvasProvider } from './context/canvasContext'
 
 //Router 
 import { BrowserRouter } from 'react-router-dom'

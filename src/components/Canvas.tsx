@@ -259,7 +259,7 @@ const Canvas: React.FC = () => {
           <label htmlFor="dotted">dotted</label>
         </div>
         <div>
-          <input type="range" name="dotsize" id="dotsize" min={5} max={20} defaultValue={dotSize} onChange={(event)=> setDotSize(event.target.value) }/>
+          <input type="range" name="dotsize" id="dotsize" min={5} max={20} defaultValue={dotSize} onChange={(event)=> setDotSize(Number(event.target.value)) }/>
           <label htmlFor="dotsize">dotsize</label>
         </div>
       </div>

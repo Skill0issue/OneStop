@@ -1,4 +1,4 @@
-import React, { MutableRefObject, useContext } from "react";
+import { MutableRefObject, useContext } from "react";
 import { CanvasContext } from "../context/canvasContext";
 
 
