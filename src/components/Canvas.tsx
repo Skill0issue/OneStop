@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useState, useRef } from "react";
+import { useLayoutEffect, useState } from "react";
 import useCanvas from "../hooks/useCanvas";
 import rough from "roughjs/bundled/rough.esm";
 import { RoughCanvas } from "roughjs/bin/canvas";

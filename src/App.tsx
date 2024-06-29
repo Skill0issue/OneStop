@@ -1,8 +1,4 @@
-import react from "react";
 import { Route, Routes } from "react-router-dom";
-
-
-
 
 
 //Components/Pages
