@@ -14,6 +14,15 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/canvas" element={<Canvas />} />
         <Route path="/test" element={<Test />} />
+        <Route
+          path="/*"
+          element={
+            <>
+              Work in Progress Checkout my Github in the mean time
+              <a href="https://github.com/Skill0issue"> Skill_Issue</a>
+            </>
+          }
+        />
       </Routes>
     </>
   );

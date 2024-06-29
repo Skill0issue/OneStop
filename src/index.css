@@ -1,10 +1,43 @@
+@import url('https://fonts.googleapis.com/css2?family=Lexend+Deca:wght@100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playwrite+PL:wght@100..400&display=swap');
 
+.dark{
+    background-color: #212529;
+}
+.dotted-canvas-white{
+  background: radial-gradient(circle, white 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+.dotted-canvas-dark{
+  background: radial-gradient(circle, #212529  1px, transparent 1px);
+  background-size: 40px 40px;
+}
 
+body{
+    overflow-x: hidden;
+    overflow-y:scroll;
+}
 
+::-webkit-scrollbar{
+    display: none;
+}
+
+.noselect {
+  -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Safari */
+     -khtml-user-select: none; /* Konqueror HTML */
+       -moz-user-select: none; /* Old versions of Firefox */
+        -ms-user-select: none; /* Internet Explorer/Edge */
+            user-select: none; /* Non-prefixed version, currently
+                                  supported by Chrome, Edge, Opera and Firefox */
+}
 
 
 
 
 @tailwind base;
-@tailwind utilities;
 @tailwind components;
+@tailwind utilities;
+
+

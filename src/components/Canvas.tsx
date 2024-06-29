@@ -1,18 +1,51 @@
-import { useLayoutEffect, useState } from "react";
+import { useContext, useEffect, useLayoutEffect, useState } from "react";
 import useCanvas from "../hooks/useCanvas";
 import rough from "roughjs/bundled/rough.esm";
 import { RoughCanvas } from "roughjs/bin/canvas";
+import { ThemeContext } from "../context/theme";
 
 const Canvas: React.FC = () => {
+  // Canvas context
   const canvasRef = useCanvas();
   const generator = rough.generator();
+  const { theme, setTheme } = useContext(ThemeContext);
 
+  // States for canvas and pens
   const [toolType, setToolType] = useState<string>("rectangle");
   const [elementType, setElementType] = useState<string>("normal");
   const [action, setAction] = useState<string>("none");
-  const [dotted, setDotted] = useState(false);
-  const [dotSize,setDotSize]= useState(5);
+  const [dottedLine, setDottedLine] = useState(false);
+  const [dotLineSize, setDotLineSize] = useState(5);
+  const [dottedCanvas, setDottedCanvas] = useState(true);
 
+  useEffect(() => {
+    const canvas: HTMLElement|null = document.getElementById("canvas");
+    if (dottedCanvas) {
+      if (theme) {
+        canvas?.classList.remove("dotted-canvas-white");
+        canvas?.classList.add("dotted-canvas-dark");
+      } else {
+        canvas?.classList.remove("dotted-canvas-dark");
+        canvas?.classList.add("dotted-canvas-white");
+      }
+    }
+    else {
+      canvas?.classList.remove("dotted-canvas-white");
+      canvas?.classList.remove("dotted-canvas-dark");
+    }
+  },[dottedCanvas,theme])
+
+  useEffect(() => {
+          if ((action === "drawing" || action ==="moving") && window.location.pathname === "/canvas") {
+            document.getElementById("sidebar")?.classList.add("hidden");
+  } else {
+            document.getElementById("sidebar")?.classList.remove("hidden")
+          }
+  },[action])
+
+
+
+  // States for elements
   const [elements, setElements] = useState<element[]>([]);
   const [selectedElement, setSelectedElement] = useState<element | null>(null);
   const [selectedElementOffset, setSelectedElementOffset] = useState<{
@@ -28,7 +61,7 @@ const Canvas: React.FC = () => {
     y1: number;
     x2: number;
     y2: number;
-    dotsize: number;
+    dotLinesize: number;
   };
 
   const distance = (
@@ -85,7 +118,7 @@ const Canvas: React.FC = () => {
           x2: clientX,
           y2: clientY,
           id: elements.length,
-          dotsize: dotted? dotSize : 0,
+          dotLinesize: dottedLine ? dotLineSize : 0,
         },
       ]);
       setAction("drawing");
@@ -148,12 +181,12 @@ const Canvas: React.FC = () => {
     if (context) {
       context.clearRect(0, 0, context.canvas.width, context.canvas.height);
       elements.forEach((elem) => {
-        context.setLineDash([elem.dotsize]);
+        context.setLineDash([elem.dotLinesize]);
         switch (elem.toolType) {
           case "line":
             if (elem.elementType === "normal") {
-              context.strokeStyle = "black";
-              context.lineWidth = 1;
+              context.strokeStyle = theme ? "black" : "white";
+              context.lineWidth = 2;
               context.beginPath();
               context.moveTo(elem.x1, elem.y1);
               context.lineTo(elem.x2, elem.y2);
@@ -176,8 +209,8 @@ const Canvas: React.FC = () => {
             }
             if (elem.elementType === "normal") {
               context.fillStyle = "none";
-              context.strokeStyle = "black";
-              context.lineWidth = 1;
+              context.strokeStyle = theme ? "black" : "white";
+              context.lineWidth = 2;
               context.strokeRect(
                 elem.x1,
                 elem.y1,
@@ -202,16 +235,21 @@ const Canvas: React.FC = () => {
         draw(roughCanvas, context);
       }
     }
-  }, [canvasRef, elements]);
+  }, [canvasRef, elements,theme]);
 
   return (
     <>
-      <div className="fixed w-screen h-12 flex gap-4 text-center  justify-center items-center">
+      <div
+        className={`fixed w-screen h-12 flex gap-4 text-center justify-center items-center noselect ${
+          theme ? "text-dark" : "text-white"
+        }`}
+      >
         <div>
           <select
             name="ElementType"
             defaultValue={elementType}
             id="elementType"
+            className="text-dark"
             onChange={(event) => {
               setElementType(event.target.value);
             }}
@@ -220,7 +258,7 @@ const Canvas: React.FC = () => {
             <option value="rough">Rough</option>
           </select>
         </div>
-        <div>
+        <div className="gap-1 flex ">
           <input
             type="radio"
             name="toolType"
@@ -230,7 +268,7 @@ const Canvas: React.FC = () => {
           />
           <label htmlFor="line">Line</label>
         </div>
-        <div>
+        <div className="gap-1 flex ">
           <input
             type="radio"
             name="toolType"
@@ -240,7 +278,7 @@ const Canvas: React.FC = () => {
           />
           <label htmlFor="select">Select</label>
         </div>
-        <div>
+        <div className="gap-1 flex ">
           <input
             type="radio"
             name="toolType"
@@ -252,15 +290,53 @@ const Canvas: React.FC = () => {
         </div>
         <div
           onChange={() => {
-            setDotted(!dotted);
+            setDottedLine(!dottedLine);
           }}
+          className="gap-1 flex "
         >
-          <input type="checkbox" name="doted" id="doted" checked={dotted} />
-          <label htmlFor="dotted">dotted</label>
+          <input
+            type="checkbox"
+            name="dotted"
+            id="dotted"
+            checked={dottedLine}
+          />
+          <label htmlFor="dottedLine">Dotted Line</label>
         </div>
-        <div>
-          <input type="range" name="dotsize" id="dotsize" min={5} max={20} defaultValue={dotSize} onChange={(event)=> setDotSize(Number(event.target.value)) }/>
-          <label htmlFor="dotsize">dotsize</label>
+        <div className="gap-1 flex ">
+          <input
+            type="range"
+            name="dotLinesize"
+            id="dotLinesize"
+            min={5}
+            max={20}
+            defaultValue={dotLineSize}
+            onChange={(event) => setDotLineSize(Number(event.target.value))}
+          />
+          <label htmlFor="dotLinesize">Dot Line Size</label>
+        </div>
+        <div className="flex gap-1">
+          <input
+            type="checkbox"
+            name="theme"
+            id="theme"
+            checked={theme}
+            onChange={() => {
+              setTheme(!theme);
+            }}
+          />
+          <label htmlFor="theme">Theme</label>
+        </div>
+        <div className="flex gap-1">
+          <input
+            type="checkbox"
+            name="dottedCanvas"
+            id="dottedCanvas"
+            checked={dottedCanvas}
+            onChange={() => {
+              setDottedCanvas(!dottedCanvas);
+            }}
+          />
+          <label htmlFor="dottedCanvas">Dotted Canvas</label>
         </div>
       </div>
       <canvas

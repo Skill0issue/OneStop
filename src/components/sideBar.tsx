@@ -1,50 +1,114 @@
-import  { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import {
   FaHome,
   FaSearch,
-  FaBox,
   FaChevronDown,
   FaCogs,
   FaClipboardList,
   FaChartPie,
-  FaCalendarCheck,
-  FaCalendarAlt,
   FaBell,
   FaQuestionCircle,
   FaSignOutAlt,
 } from "react-icons/fa";
 import { IoClose } from "react-icons/io5";
+import { RiChatVoiceFill } from "react-icons/ri";
+import { IoChatbubbleEllipsesOutline } from "react-icons/io5";
+import { CgGames } from "react-icons/cg";
+import { MdChecklist } from "react-icons/md";
+import { IoClipboardOutline } from "react-icons/io5";
 
-const Dashboard = () => {
+import { ThemeContext } from "../context/theme";
+
+interface MenuItem {
+  icon: JSX.Element;
+  label: string;
+  to?: string;
+  subMenu?: MenuItem[];
+}
+
+const Dashboard: React.FC = () => {
   const [isMinimized, setIsMinimized] = useState<boolean>(true);
-  const [isSubMenuOpen, setIsSubMenuOpen] = useState<boolean>(true);
-    const theme:boolean = true;
+  const [isSubMenuOpen, setIsSubMenuOpen] = useState<{
+    [key: string]: boolean;
+  }>({});
+  const { theme } = useContext(ThemeContext);
+
+  // Debounce effect
+  let debounceTimer: NodeJS.Timeout;
 
   const toggleMinimize = () => {
     setIsMinimized(!isMinimized);
   };
 
+  const toggleSubMenu = (label: string) => {
+    setIsSubMenuOpen((prev) => ({
+      ...prev,
+      [label]: !prev[label],
+    }));
+  };
+
   useEffect(() => {
     if (isMinimized) {
-      setIsSubMenuOpen(false);
+      setIsSubMenuOpen({});
     }
   }, [isMinimized]);
 
   const size = "24px";
 
-  const toggleSubMenu = () => {
-    setIsSubMenuOpen(!isSubMenuOpen);
+  const menuItems: MenuItem[] = [
+    { icon: <FaHome size={size} />, label: "Home", to: "/home" },
+    {
+      icon: <IoClipboardOutline size={size} />,
+      label: "WhiteBoard",
+      to: "/canvas",
+    },
+    {
+      icon: <FaBell size={size} />,
+      label: "Notifications",
+      to: "/notifications",
+    },
+    {
+      icon: <IoChatbubbleEllipsesOutline size={size} />,
+      label: "Chat",
+      subMenu: [
+        {
+          icon: <RiChatVoiceFill size={size} />,
+          label: "VoiceChat",
+          to: "/voiceChat",
+        },
+      ],
+    },
+    { icon: <CgGames size={size} />, label: "Games", to: "/games" },
+    { icon: <MdChecklist size={size} />, label: "To-do List", to: "/todo" },
+    {
+      icon: <FaChartPie size={size} />,
+      label: "Statistics",
+      to: "/statistics",
+    },
+  ];
+
+  const handleMouseEnter = () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => setIsMinimized(false), 200);
+  };
+
+  const handleMouseLeave = () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => setIsMinimized(true), 200);
   };
 
   return (
     <div
-      className={`flex flex-col h-[85%] p-3 rounded-xl z-2 absolute left-[24px] items-center shadow-xl mt-4 ${
+      id="sidebar"
+      className={`flex flex-col h-[85%] p-3 rounded-xl z-2 absolute left-[24px] items-center shadow-xl top-[70px] noselect ${
         isMinimized ? "w-20" : "w-72"
       } ${
         theme
           ? "bg-white text-white-primary"
           : "bg-dark text-dark-primary border-dark-primary border-2"
-      } transition-width duration-300 text-xl font-poppins font-medium`}
+      } transition-all duration-300 ease-in-out text-xl font-poppins font-medium`}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <div className=" flex-1">
         <div className="flex items-end justify-between">
@@ -98,38 +162,21 @@ const Dashboard = () => {
             </div>
           )}
           <ul className="pt-2 pb-4 space-y-2 text-sm">
-            {[
-              { icon: <FaHome size={size} />, label: "Home", to: "/" },
-              {
-                icon: <FaClipboardList size={size} />,
-                label: "WhiteBoard",
-                to: "/canvas",
-              },
-              { icon: <FaBell size={size} />, label: "Notifications", to: "#" },
-              {
-                icon: <FaCalendarAlt size={size} />,
-                label: "Appointments",
-                subMenu: [
-                  {
-                    icon: <FaCalendarCheck size={size} />,
-                    label: "View Appointments",
-                  },
-                ],
-              },
-              { icon: <FaBox size={size} />, label: "Orders", to: "#" },
-              {
-                icon: <FaChartPie size={size} />,
-                label: "Statistics",
-                to: "#",
-              },
-            ].map((item, index) => (
+            {menuItems.map((item, index) => (
               <li key={index} className="rounded-sm ">
                 <a
-                  href={item.to}
+                  href={item.to || "#"}
                   className={`flex items-center rounded-md justify-between ${
                     theme ? "bg-white text-dark" : "bg-dark text-white"
                   }`}
-                  onClick={!isMinimized && item.subMenu ? toggleSubMenu : undefined}
+                  onClick={
+                    !isMinimized && item.subMenu
+                      ? (e) => {
+                          e.preventDefault();
+                          toggleSubMenu(item.label);
+                        }
+                      : undefined
+                  }
                 >
                   <div className="flex space-x-3 items-center rounded-md p-2">
                     {item.icon}
@@ -140,17 +187,17 @@ const Dashboard = () => {
                   {item.subMenu && !isMinimized && (
                     <FaChevronDown
                       className={`w-3 h-3 ml-auto transition-transform duration-200 mr-4 ${
-                        isSubMenuOpen ? "transform rotate-180" : ""
+                        isSubMenuOpen[item.label] ? "transform rotate-180" : ""
                       } ${theme ? "text-dark" : "text-white"}`}
                     />
                   )}
                 </a>
-                {item.subMenu && isSubMenuOpen && (
+                {item.subMenu && isSubMenuOpen[item.label] && (
                   <ul className="pl-8 mt-1 space-y-1">
                     {item.subMenu.map((subItem, subIndex) => (
                       <li key={subIndex} className="rounded-sm">
                         <a
-                          href="#"
+                          href={subItem.to}
                           className={`flex items-center p-2 space-x-3 rounded-md ${
                             theme ? "bg-white text-dark" : "bg-dark text-white"
                           }`}
