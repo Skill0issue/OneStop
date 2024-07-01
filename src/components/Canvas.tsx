@@ -22,13 +22,17 @@ import { PiRectangleDuotone } from "react-icons/pi";
 import { GoDash } from "react-icons/go";
 import { AiOutlineDash } from "react-icons/ai";
 
+// Element Lock from Moving
+
+import { CiLock } from "react-icons/ci";
+import { CiUnlock } from "react-icons/ci";
+
 // //circle
 // import { FaRegCircle } from "react-icons/fa";
 // import { FaCircle } from "react-icons/fa";
 // import { PiCircleDashedThin } from "react-icons/pi";
 // import { PiCircleDashedDuotone } from "react-icons/pi"; //fill
 // import Navbar from './../../../tedblog/src/pages/Navbar';
-import { set } from 'firebase/database';
 
 // <FaCircle />;
 // <FaRegCircle />;
@@ -51,6 +55,9 @@ const Canvas: React.FC = () => {
   const [dottedLine, setDottedLine] = useState(false);
   const [dotLineSize, setDotLineSize] = useState(5);
   const [dottedCanvas, setDottedCanvas] = useState(true);
+  const [highLightedElement, setHighLightedElement] = useState<element | null>(
+    null
+  ); // used to pickup elements wihtout layering
 
   useEffect(() => {
     const canvas: HTMLElement | null = document.getElementById(
@@ -98,9 +105,11 @@ const Canvas: React.FC = () => {
     y1: number;
     x2: number;
     y2: number;
+    locked: boolean;
     dotLinesize: number;
     position?: string;
   };
+  // TODO remove this Element and replace it with Element
   interface Positionelement {
     position: string | null;
     toolType: string;
@@ -110,6 +119,7 @@ const Canvas: React.FC = () => {
     y1: number;
     x2: number;
     y2: number;
+    locked: boolean;
     dotLinesize: number;
   }
 
@@ -132,6 +142,7 @@ const Canvas: React.FC = () => {
     }
   };
 
+  // TODO: keep the Update Element updated with the type element
   const updateElement = (
     id: number,
     x1: number,
@@ -146,6 +157,14 @@ const Canvas: React.FC = () => {
       el.id === id
         ? { ...el, x1, y1, x2, y2, toolType, elementType, dotLinesize }
         : el
+    );
+    setElements(updatedElements);
+  };
+
+  const toggleLock = (id: number) => {
+    //TODO: remove this block below and add the upadteElement Function
+    const updatedElements = elements.map((el) =>
+      el.id === id ? { ...el, locked: !el.locked } : el
     );
     setElements(updatedElements);
   };
@@ -168,6 +187,7 @@ const Canvas: React.FC = () => {
   };
 
   const PositionWithinElement = (x: number, y: number, element: element) => {
+    if (element.locked) return null;
     const { x1, x2, y1, y2, toolType } = element;
     if (toolType === "line") {
       const a = { x: x1, y: y1 };
@@ -204,10 +224,26 @@ const Canvas: React.FC = () => {
 
   const handleMouseDown = (event: React.MouseEvent<HTMLCanvasElement>) => {
     const { clientX, clientY } = event;
+    let currentElement;
     if (toolType === "select") {
-      const currentElement = getElementAtPosition(clientX, clientY, elements);
-      if (currentElement) {
-        if (currentElement.position === "inside") { 
+      currentElement = getElementAtPosition(clientX, clientY, elements); // set a position Element
+      if (highLightedElement) {
+        //do something
+        // check if cursor is inside the highlighted element
+        //DONE: but problem arises as element has a type Element where as highlighted Element has a type of positionElement
+        //DONE: solution could be to remove the position from the highlighted Element and update it further down as we set it to the selected element
+        const el = {
+          ...highLightedElement,
+          position: PositionWithinElement(clientX, clientY, highLightedElement),
+        };
+        if (el.position != null) {
+          currentElement = el; // if cursor inside highlighted element update it 
+        }
+      }
+        // in the case there is no highlighted element fuction  dosent invocate
+
+      if (currentElement && !currentElement.locked) {
+        if (currentElement.position === "inside") {
           setAction("moving");
           setSelectedElementOffset({
             offsetX: clientX - currentElement.x1,
@@ -219,7 +255,8 @@ const Canvas: React.FC = () => {
         }
         setSelectedElement(currentElement);
       }
-    } if(toolType === "line" || toolType === "rectangle") {
+    }
+    if (toolType === "line" || toolType === "rectangle") {
       // @TODO : need to change this when adding resize and other options :(
       setElements((prev) => [
         ...prev,
@@ -230,6 +267,7 @@ const Canvas: React.FC = () => {
           y1: clientY,
           x2: clientX,
           y2: clientY,
+          locked: false,
           id: elements.length,
           dotLinesize: dottedLine ? dotLineSize : 0,
         },
@@ -238,13 +276,12 @@ const Canvas: React.FC = () => {
     }
   };
 
-   
   const CursorIcon = (pos: string | null): string => {
     switch (pos) {
       case "tl":
         return "nw-resize";
       case "bl":
-        return "sw-resize"
+        return "sw-resize";
       case "start":
       case "end":
         return "nwse-resize";
@@ -253,119 +290,117 @@ const Canvas: React.FC = () => {
       case "br":
         return "nw-resize";
       default:
-        return "move"
+        return "move";
     }
   };
 
-const ResizeElement = (
-  x1: number,
-  y1: number,
-  x2: number,
-  y2: number,
-  position: string,
-  clientX: number,
-  clientY: number
-) => {
-  switch (position) {
-    case "tl":
-    case "start":
-      return { x1: clientX, y1: clientY, x2, y2 };
-    case "bl":
-      return { x1:clientX, y1, x2, y2: clientY };
-    case "tr":
-      return { x1, y1: clientY, x2: clientX, y2 };
-    case "br":
-    case "end":
-      return { x1, y1, x2: clientX, y2: clientY };
-    default:
-      return { x1, y1, x2, y2 };
-  }
-};
+  const ResizeElement = (
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number,
+    position: string,
+    clientX: number,
+    clientY: number
+  ) => {
+    switch (position) {
+      case "tl":
+      case "start":
+        return { x1: clientX, y1: clientY, x2, y2 };
+      case "bl":
+        return { x1: clientX, y1, x2, y2: clientY };
+      case "tr":
+        return { x1, y1: clientY, x2: clientX, y2 };
+      case "br":
+      case "end":
+        return { x1, y1, x2: clientX, y2: clientY };
+      default:
+        return { x1, y1, x2, y2 };
+    }
+  };
 
-const handleMouseMove = (event: React.MouseEvent<HTMLCanvasElement>) => {
-  const { clientX, clientY } = event;
-  
-  if (action === "moving" && selectedElement) {
-    const { offsetX, offsetY } = selectedElementOffset;
-    const width = selectedElement.x2 - selectedElement.x1;
-    const height = selectedElement.y2 - selectedElement.y1;
-    
-    const newX1 = clientX - offsetX;
-    const newY1 = clientY - offsetY;
-    
-    const updatedElement = {
-      ...selectedElement,
-      x1: newX1,
-      y1: newY1,
-      x2: newX1 + width,
-      y2: newY1 + height,
-    };
-    
-    setSelectedElement(updatedElement);
-    updateElement(
-      selectedElement.id,
-      newX1,
-      newY1,
-      newX1 + width,
-      newY1 + height,
-      selectedElement.toolType,
-      selectedElement.elementType,
-      selectedElement.dotLinesize
-    );
-  }
-  
+  const handleMouseMove = (event: React.MouseEvent<HTMLCanvasElement>) => {
+    const { clientX, clientY } = event;
+
+    if (action === "moving" && selectedElement) {
+      const { offsetX, offsetY } = selectedElementOffset;
+      const width = selectedElement.x2 - selectedElement.x1;
+      const height = selectedElement.y2 - selectedElement.y1;
+
+      const newX1 = clientX - offsetX;
+      const newY1 = clientY - offsetY;
+
+      const updatedElement = {
+        ...selectedElement,
+        x1: newX1,
+        y1: newY1,
+        x2: newX1 + width,
+        y2: newY1 + height,
+      };
+
+      setSelectedElement(updatedElement);
+      updateElement(
+        selectedElement.id,
+        newX1,
+        newY1,
+        newX1 + width,
+        newY1 + height,
+        selectedElement.toolType,
+        selectedElement.elementType,
+        selectedElement.dotLinesize
+      );
+    }
+
     if (toolType === "select") {
       const element = getElementAtPosition(clientX, clientY, elements);
       (event.target as HTMLCanvasElement).style.cursor = element
         ? CursorIcon(element.position)
         : "default";
     }
-  
-  if (action === "resize" && selectedElement) {
-    const { x1, y1, x2, y2 } = ResizeElement(
-      selectedElement.x1,
-      selectedElement.y1,
-      selectedElement.x2,
-      selectedElement.y2,
-      selectedElement.position,
-      clientX,
-      clientY
-    );
-    updateElement(
-      selectedElement.id,
-      x1,
-      y1,
-      x2,
-      y2,
-      selectedElement.toolType,
-      selectedElement.elementType,
-      selectedElement.dotLinesize
-    );
-  }
 
-  if (action === "drawing") {
-    setElements((prev) => {
-      const updatedElements = [...prev];
-      const length = updatedElements.length;
-      if (length > 0) {
-        const element = updatedElements[length - 1];
-        updateElement(
-          element.id,
-          element.x1,
-          element.y1,
-          clientX,
-          clientY,
-          element.toolType,
-          element.elementType,
-          element.dotLinesize
-        );
-      }
-      return updatedElements;
-    });
-  }
-};
+    if (action === "resize" && selectedElement) {
+      const { x1, y1, x2, y2 } = ResizeElement(
+        selectedElement.x1,
+        selectedElement.y1,
+        selectedElement.x2,
+        selectedElement.y2,
+        selectedElement.position,
+        clientX,
+        clientY
+      );
+      updateElement(
+        selectedElement.id,
+        x1,
+        y1,
+        x2,
+        y2,
+        selectedElement.toolType,
+        selectedElement.elementType,
+        selectedElement.dotLinesize
+      );
+    }
 
-
+    if (action === "drawing") {
+      setElements((prev) => {
+        const updatedElements = [...prev];
+        const length = updatedElements.length;
+        if (length > 0) {
+          const element = updatedElements[length - 1];
+          updateElement(
+            element.id,
+            element.x1,
+            element.y1,
+            clientX,
+            clientY,
+            element.toolType,
+            element.elementType,
+            element.dotLinesize
+          );
+        }
+        return updatedElements;
+      });
+    }
+  };
 
   const adjustElementCoordinates = (el: element) => {
     const { x1, y1, x2, y2, toolType } = el;
@@ -409,6 +444,7 @@ const handleMouseMove = (event: React.MouseEvent<HTMLCanvasElement>) => {
     }
     setAction("none");
     setSelectedElement(null);
+    setHighLightedElement(null);
   };
 
   const draw = (
@@ -590,30 +626,43 @@ const handleMouseMove = (event: React.MouseEvent<HTMLCanvasElement>) => {
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
         />
-        <div className="absolute w-64 h-[90vh] flex justify-start gap-3 items-center flex-col shadow-xl rounded-xl right-[40px] top-[5%] bg-white">
-          <ul>
+        <div className="absolute w-64 h-[90vh] flex justify-start gap-3 items-center flex-col shadow-xl rounded-xl right-[40px] top-[5%] bg-white overflow-y-auto overflow-x-hidden">
+          <ul className="w-full m-2">
             {elements.map((element) => (
-              <li key={element.id}>
-                <div className="flex items-center" onClick={(event) => {
-
-                  //TODO: add layers and remove this shit code
-
-                  const pos = PositionWithinElement(
-                    event.clientX,
-                    event.clientY,
-                    element
-                  );
-                  const posElement = { ...element, position: pos };
-                  setToolType("select");
-                  setSelectedElement(posElement);
-                  setSelectedElementOffset({offsetX:0,offsetY:0})
-                  setAction("moving");
-                }}>
-                  {getIcon(element.toolType, element.dotLinesize)} &nbsp;{" "}
-                  {element.elementType} &nbsp;
-                  {element.toolType} &nbsp; {element.id + 1}
-                </div>
-              </li>
+              <>
+                <li
+                  key={element.id}
+                  className={`cursor-pointer w-full flex items-center gap-2 my-2 px-2 capitalize h-6 justify-between group ${
+                    highLightedElement?.id === element.id ? "bg-gray-200" : ""
+                  }`}
+                  onClick={() => {
+                    if (!element.locked) {
+                      setToolType("select");
+                      setHighLightedElement(element);
+                      setAction("selected");
+                    }
+                  }}
+                >
+                  <div className="flex items-center h-full text-baseline text-sm noselect">
+                    {getIcon(element.toolType, element.dotLinesize)} &nbsp;
+                    {element.elementType} &nbsp;
+                    {element.toolType} &nbsp; {element.id + 1}
+                  </div>
+                  <div
+                    className="none group-hover:block"
+                    onClick={() => {
+                      toggleLock(element.id);
+                    }}
+                  >
+                    {element.locked ? (
+                      <CiLock className="w-6 h-6" />
+                    ) : (
+                      <CiUnlock className="w-6 h-6" />
+                    )}
+                  </div>
+                </li>
+                <hr />
+              </>
             ))}
           </ul>
         </div>
